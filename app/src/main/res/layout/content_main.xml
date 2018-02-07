@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:showIn="@layout/activity_main"
+        tools:context="com.mattihew.project_app.MainActivity">
+
+    <android.support.design.widget.CoordinatorLayout
+            android:layout_width="368dp"
+            android:layout_height="495dp" tools:layout_editor_absoluteY="8dp"
+            tools:layout_editor_absoluteX="8dp">
+
+        <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="368dp"
+                android:layout_height="495dp" tools:layout_editor_absoluteY="8dp"
+                tools:layout_editor_absoluteX="8dp">
+            <Button
+                    android:text="Start"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/startBtn" android:elevation="0dp"
+                    android:onClick="onClick"/>
+            <Button
+                    android:text="Stop"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/stopBtn" android:onClick="onClick"/>
+            <WebView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" android:id="@+id/webView1"/>
+        </LinearLayout>
+    </android.support.design.widget.CoordinatorLayout>
+
+</android.support.constraint.ConstraintLayout>

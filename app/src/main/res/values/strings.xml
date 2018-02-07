@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Project-app</string>
+    <string name="action_settings">Settings</string>
+    <string name="ble_uuid">3558a925-463b-4327-8859-d565b478a8c4</string>
+</resources>
