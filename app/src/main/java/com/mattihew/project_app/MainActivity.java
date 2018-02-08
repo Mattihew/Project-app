@@ -6,11 +6,10 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.Intent;
-import android.net.Uri;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.ParcelUuid;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -20,17 +19,15 @@ import android.view.MenuItem;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.Toast;
 
-import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener
 {
 
     private BluetoothLeAdvertiser advertiser;
-    private AdvertiseSettings settings;
-
     private AdvertiseCallback callback;
     private AdvertiseData data;
 
@@ -42,24 +39,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener()
+        if (BluetoothAdapter.getDefaultAdapter() == null || !BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported())
         {
-            @Override
-            public void onClick(View view)
-            {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-        if (!BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported())
-        {
-            Toast.makeText(this, "BLE not supported",Toast.LENGTH_SHORT);
+            Toast.makeText(this, "BLE not supported",Toast.LENGTH_SHORT).show();
+            Button startBtn = (Button) findViewById(R.id.startBtn);
+            Button stopBtn = (Button) findViewById(R.id.stopBtn);
+            startBtn.setEnabled(false);
+            stopBtn.setEnabled(false);
         }
-
-        bleSetup();
-
+        else
+        {
+            bleSetup();
+        }
         WebView webview = (WebView) findViewById(R.id.webView1);
         webview.setWebChromeClient(new WebChromeClient());
         webview.setWebViewClient(new WebViewClient());
@@ -85,6 +76,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings)
         {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            this.startActivity(intent);
             return true;
         }
 
@@ -96,25 +89,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         if (v.getId() == R.id.startBtn)
         {
-            System.out.println("start");
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+            final AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                    .setAdvertiseMode(prefs.getInt("sync_frequency", AdvertiseSettings.ADVERTISE_MODE_LOW_POWER))
+                    .setTxPowerLevel(prefs.getInt("sync_power",AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW))
+                    .setConnectable(false)
+                    .build();
             advertiser.startAdvertising(settings, data, callback);
         }
         else if(v.getId() == R.id.stopBtn)
         {
-            System.out.println("stop");
             advertiser.stopAdvertising(callback);
         }
     }
 
-    private BluetoothLeAdvertiser bleSetup()
+    private void bleSetup()
     {
         this.advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
-        this.settings = new AdvertiseSettings.Builder()
-                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
-                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW)
-                .setConnectable(false)
-                .build();
+
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString(getString(R.string.ble_uuid)));
+
 
         this.data = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
@@ -137,6 +132,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 super.onStartFailure(errorCode);
             }
         };
-        return this.advertiser;
     }
 }
