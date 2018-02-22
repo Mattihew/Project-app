@@ -10,19 +10,17 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Button;
 import android.widget.Toast;
-
-import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener
 {
@@ -31,26 +29,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private AdvertiseCallback callback;
     private AdvertiseData data;
 
+    private String androidID;
+    private String btName;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        androidID = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         if (BluetoothAdapter.getDefaultAdapter() == null || !BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported())
         {
-            Toast.makeText(this, "BLE not supported",Toast.LENGTH_SHORT).show();
-            Button startBtn = (Button) findViewById(R.id.startBtn);
-            Button stopBtn = (Button) findViewById(R.id.stopBtn);
-            startBtn.setEnabled(false);
-            stopBtn.setEnabled(false);
+            Toast.makeText(this, "BLE not supported",Toast.LENGTH_LONG).show();
+            findViewById(R.id.startBtn).setEnabled(false);
         }
         else
         {
             bleSetup();
         }
+        findViewById(R.id.stopBtn).setEnabled(false);
+
         WebView webview = (WebView) findViewById(R.id.webView1);
         webview.setWebChromeClient(new WebChromeClient());
         webview.setWebViewClient(new WebViewClient());
@@ -90,17 +91,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (v.getId() == R.id.startBtn)
         {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
+            final int adMode = Integer.parseInt(prefs.getString(
+                    "sync_frequency",
+                    Integer.toString(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)));
+            final int adPower = Integer.parseInt(prefs.getString(
+                    "sync_power",
+                    Integer.toString(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW)));
             final AdvertiseSettings settings = new AdvertiseSettings.Builder()
-                    .setAdvertiseMode(prefs.getInt("sync_frequency", AdvertiseSettings.ADVERTISE_MODE_LOW_POWER))
-                    .setTxPowerLevel(prefs.getInt("sync_power",AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW))
+                    .setAdvertiseMode(adMode)
+                    .setTxPowerLevel(adPower)
                     .setConnectable(false)
                     .build();
+            this.btName = BluetoothAdapter.getDefaultAdapter().getName();
+            BluetoothAdapter.getDefaultAdapter().setName(androidID);
             advertiser.startAdvertising(settings, data, callback);
+            v.setEnabled(false);
+            findViewById(R.id.stopBtn).setEnabled(true);
+            Toast.makeText(this, "Bluetooth advertising started", Toast.LENGTH_SHORT).show();
         }
         else if(v.getId() == R.id.stopBtn)
         {
             advertiser.stopAdvertising(callback);
+            BluetoothAdapter.getDefaultAdapter().setName(this.btName);
+            this.btName = null;
+            v.setEnabled(false);
+            findViewById(R.id.startBtn).setEnabled(true);
+            Toast.makeText(this, "Bluetooth advertising stopped", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -108,8 +124,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         this.advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
 
-        ParcelUuid pUuid = new ParcelUuid(UUID.fromString(getString(R.string.ble_uuid)));
-
+        ParcelUuid pUuid = ParcelUuid.fromString(getString(R.string.ble_uuid));
 
         this.data = new AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
