@@ -52,10 +52,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         findViewById(R.id.stopBtn).setEnabled(false);
 
-        WebView webview = (WebView) findViewById(R.id.webView1);
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        final WebView webview = (WebView) findViewById(R.id.webView1);
         webview.setWebChromeClient(new WebChromeClient());
         webview.setWebViewClient(new WebViewClient());
-        webview.loadUrl("https://example.com");
+        webview.loadUrl(prefs.getString("server_address", "http://example.com"));
+        prefs.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener()
+        {
+            @Override
+            public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences, final String key)
+            {
+                if (key.equals("server_address"))
+                {
+                    webview.loadUrl(sharedPreferences.getString("server_address", "http://example.com"));
+                }
+            }
+        });
     }
 
     @Override
